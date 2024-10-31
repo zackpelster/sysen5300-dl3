@@ -214,5 +214,5 @@ stat_s %>%
   geom_point(size = 5) +
   # Plot labels
   # geom_label(data = labels, mapping = aes(x = State, y = value, label = text),  hjust = 1)  +
-  labs(x = "State (Subgroups)", y = "Average (Readmission per Discharge)",
-       subtitle = "Average and Standard Deviation Chart")
+  labs(x = "State (Subgroups)", y = "Average (Readmissions per Discharge)",
+       subtitle = "Average Chart")
