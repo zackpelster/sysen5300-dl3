@@ -6,6 +6,23 @@ library(moments)
 library(dplyr)
 library(tidyr)
 
+
+#Let's write a function bn() to calculate our B3 and B4 statistics for any subgroup size n
+bn = function(n, reps = 1e4){
+  tibble(rep = 1:reps) %>%
+    group_by(rep) %>%
+    summarize(s = rnorm(n, mean = 0, sd = 1) %>% sd()) %>%
+    summarize(b2 = mean(s), 
+              b3 = sd(s),
+              C4 = b2, # this is sometimes called C4
+              A3 = 3 / (b2 * sqrt( n  )),
+              B3 = 1 - 3 * b3/b2,
+              B4 = 1 + 3 * b3/b2,
+              # bound B3 at 0, since we can't have a standard deviation below 0
+              B3 = if_else(B3 < 0, true = 0, false = B3)) %>%
+    return()
+}
+
 raw_readmissions = read.csv(
   "FY_2024_Hospital_Readmissions_Reduction_Program_Hospital.csv"
   )
@@ -161,16 +178,32 @@ stat_s = stat %>%
     # within-group sample size
     nw = n(),
     # Degrees of freedom within groups
-    df = nw - 1) %>%
+    df = nw - 1)
+  
+# For each different subgroup sample size, calculate control constants
+constants = stat_s %>%
+  select(nw) %>%
+  distinct() %>%
+  group_by(nw) %>%
+  summarize( bn(n = nw, reps = 1e4),
+             dn(n = nw, reps = 1e4)) %>%
+  ungroup()
+
+# Join in the control constants
+stat_s = stat_s %>% 
+  left_join(by = "nw", y = constants)
+
   # Last, we'll calculate sigma_short (within-group variance)
   # We're going to calculate the short-term variation parameter sigma_s (sigma_short)
   # by taking the square root of the average of the standard deviation
   # Essentially, we're weakening the impact of any special cause variation
   # so that our sigma is mostly representative of common cause (within-group) variation
-  mutate(
+stat_s = stat_s %>% mutate(
     # these are equivalent
     sigma_s = sqrt( sum(df * sd^2) / sum(df) ),
     sigma_s = sqrt(mean(sd^2)), 
+    # Get the average range
+    rbar = mean(r),
     # And get standard error (in a way that retains each subgroup's sample size!)
     se = sigma_s / sqrt(nw),
     # Calculate 6-sigma control limits!
@@ -179,7 +212,19 @@ stat_s = stat %>%
     upper_A_B = mean(xbar) + 2*se,
     lower_A_B = mean(xbar) - 2*se,
     upper_B_C = mean(xbar) + 1*se,
-    lower_B_C = mean(xbar) - 1*se)
+    lower_B_C = mean(xbar) - 1*se,
+    s_upper = sigma_s * B4,
+    s_lower = sigma_s * B3,
+    s_upper_A_B = sigma_s * B4 - (s_upper - s_lower)/2 * 1/3,
+    s_lower_A_B = sigma_s * B3 + (s_upper - s_lower)/2 * 1/3,
+    s_upper_B_C = sigma_s * B4 - (s_upper - s_lower)/2 * 2/3,
+    s_lower_B_C = sigma_s * B3 + (s_upper - s_lower)/2 * 2/3,
+    r_upper = rbar * D4,
+    r_lower = rbar * D3,
+    r_upper_A_B = rbar * D4 - (r_upper - r_lower)/2 * 1/3,
+    r_lower_A_B = rbar * D3 + (r_upper - r_lower)/2 * 1/3,
+    r_upper_B_C = rbar * D4 - (r_upper - r_lower)/2 * 2/3,
+    r_lower_B_C = rbar * D3 + (r_upper - r_lower)/2 * 2/3)
 
 # Check it!
 stat_s %>% head(3)
@@ -195,19 +240,7 @@ stat_t = stat_s %>%
     # Or we can calculate overall standard deviation 
     sigma_t = sd(stat$rate) )
 
-# Let's extract some labels
-labels = stat_s %>%
-  summarize(
-    State = max(State),
-    type = c("xbbar",  "upper", "lower"),
-    name = c("mean", "+3 s", "-3 s"),
-    # SINCE nw Varies Upper and Lower vary resulting in many unique values ####
-    value = c(mean(xbar), first(upper), first(lower)),
-    value = round(value, 2),
-    text = paste(name, value, sep = " = "))
-labels
-
-stat_s %>%
+gs_1 = stat_s %>%
   ggplot(mapping = aes(x = State, y = xbar)) +
   geom_hline(mapping = aes(yintercept = mean(xbar)), color = "lightgrey", size = 3) +
   geom_ribbon(mapping = aes(ymin = lower, ymax = upper), fill = "steelblue", alpha = 0.2) +
@@ -224,3 +257,45 @@ stat_s %>%
   # geom_label(data = labels, mapping = aes(x = State, y = value, label = text),  hjust = 1)  +
   labs(x = "State (Subgroups)", y = "Average (Readmissions per Discharge)",
        subtitle = "Average Chart")
+gs_1
+
+gs_2 = stat_s %>%
+  ggplot(mapping = aes(x = State, y = sd)) +
+  geom_hline(data = stat_t, mapping = aes(yintercept = sdbar), color = "lightgrey", size = 3) +
+  geom_ribbon(mapping = aes(ymin = s_lower, ymax = s_upper), fill = "steelblue", alpha = 0.2) +
+  # Upper and lower control limits as lines
+  geom_line(mapping = aes(x = State, y = s_upper, group = 1), color = "red", linetype = "dashed", size = 1) +
+  geom_line(mapping = aes(x = State, y = s_lower, group = 1), color = "red", linetype = "dashed", size = 1) +
+  geom_line(mapping = aes(x = State, y = s_upper_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
+  geom_line(mapping = aes(x = State, y = s_lower_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
+  geom_line(mapping = aes(x = State, y = s_upper_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_line(mapping = aes(x = State, y = s_lower_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_line(size = 1) +
+  geom_point(size = 5) +
+  # Plot labels
+  # geom_label(data = labels, mapping = aes(x = State, y = value, label = text),  hjust = 1)  +
+  labs(x = "State (Subgroups)", y = "Standard Deviation",
+       subtitle = "Standard Deviation Chart")
+gs_2
+
+
+gs_3 = stat_s %>%
+  ggplot(mapping = aes(x = State, y = r)) +
+  geom_hline(data = stat_t, mapping = aes(yintercept = rbar), color = "lightgrey", size = 3) +
+  geom_ribbon(mapping = aes(ymin = r_lower, ymax = r_upper), fill = "steelblue", alpha = 0.2) +
+  # Upper and lower control limits as lines
+  geom_line(mapping = aes(x = State, y = r_upper, group = 1), color = "red", linetype = "dashed", size = 1) +
+  geom_line(mapping = aes(x = State, y = r_lower, group = 1), color = "red", linetype = "dashed", size = 1) +
+  geom_line(mapping = aes(x = State, y = r_upper_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
+  geom_line(mapping = aes(x = State, y = r_lower_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
+  geom_line(mapping = aes(x = State, y = r_upper_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_line(mapping = aes(x = State, y = r_lower_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_line(size = 1) +
+  geom_point(size = 5) +
+  # Plot labels
+  # geom_label(data = labels, mapping = aes(x = State, y = value, label = text),  hjust = 1)  +
+  labs(x = "State (Subgroups)", y = "Range",
+       subtitle = "Range Chart")
+gs_3
+
+ggarrange(gs_1, gs_2, gs_3, ncol = 1, nrow = 3)
