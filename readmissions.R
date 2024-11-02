@@ -175,7 +175,11 @@ stat_s = stat %>%
     se = sigma_s / sqrt(nw),
     # Calculate 6-sigma control limits!
     upper = mean(xbar) + 3*se,
-    lower = mean(xbar) - 3*se)
+    lower = mean(xbar) - 3*se,
+    upper_A_B = mean(xbar) + 2*se,
+    lower_A_B = mean(xbar) - 2*se,
+    upper_B_C = mean(xbar) + 1*se,
+    lower_B_C = mean(xbar) - 1*se)
 
 # Check it!
 stat_s %>% head(3)
@@ -210,6 +214,10 @@ stat_s %>%
   # Upper and lower control limits as lines
   geom_line(mapping = aes(x = State, y = upper, group = 1), color = "red", linetype = "dashed", size = 1) +
   geom_line(mapping = aes(x = State, y = lower, group = 1), color = "red", linetype = "dashed", size = 1) +
+  geom_line(mapping = aes(x = State, y = upper_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
+  geom_line(mapping = aes(x = State, y = lower_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
+  geom_line(mapping = aes(x = State, y = upper_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_line(mapping = aes(x = State, y = lower_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
   geom_line(size = 1) +
   geom_point(size = 5) +
   # Plot labels
