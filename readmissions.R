@@ -77,6 +77,18 @@ stat = silver_readmissions %>%
     rate = Number.of.Readmissions/Number.of.Discharges
 )
 
+
+# https://www.cdc.gov/nchs/hus/sources-definitions/geographic-region.htm
+cdc_regions = read.csv("CDC_regions.csv") %>% mutate(
+  State = State.Abbreviation
+)
+
+stat = stat %>% 
+  left_join(by = "State", y = cdc_regions) 
+
+stat = stat %>% 
+  arrange(Region, Division, State)
+
 stat %>% glimpse()
 
 hist(stat$Number.of.Readmissions)

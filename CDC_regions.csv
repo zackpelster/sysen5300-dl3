@@ -1,0 +1,52 @@
+"State Name","State Abbreviation","Division","Region"
+Alabama,AL,East South Central,South
+Alaska,AK,Pacific,West
+Arizona,AZ,Mountain,West
+Arkansas,AR,West South Central,South
+California,CA,Pacific,West
+Colorado,CO,Mountain,West
+Connecticut,CT,New England,Northeast
+Delaware,DE,South Atlantic,South
+District of Columbia,DC,South Atlantic,South
+Florida,FL,South Atlantic,South
+Georgia,GA,South Atlantic,South
+Hawaii,HI,Pacific,West
+Idaho,ID,Mountain,West
+Illinois,IL,East North Central,Midwest
+Indiana,IN,East North Central,Midwest
+Iowa,IA,West North Central,Midwest
+Kansas,KS,West North Central,Midwest
+Kentucky,KY,East South Central,South
+Louisiana,LA,West South Central,South
+Maine,ME,New England,Northeast
+Maryland,MD,South Atlantic,South
+Massachusetts,MA,New England,Northeast
+Michigan,MI,East North Central,Midwest
+Minnesota,MN,West North Central,Midwest
+Mississippi,MS,East South Central,South
+Missouri,MO,West North Central,Midwest
+Montana,MT,Mountain,West
+Nebraska,NE,West North Central,Midwest
+Nevada,NV,Mountain,West
+New Hampshire,NH,New England,Northeast
+New Jersey,NJ,Middle Atlantic,Northeast
+New Mexico,NM,Mountain,West
+New York,NY,Middle Atlantic,Northeast
+North Carolina,NC,South Atlantic,South
+North Dakota,ND,West North Central,Midwest
+Ohio,OH,East North Central,Midwest
+Oklahoma,OK,West South Central,South
+Oregon,OR,Pacific,West
+Pennsylvania,PA,Middle Atlantic,Northeast
+Rhode Island,RI,New England,Northeast
+South Carolina,SC,South Atlantic,South
+South Dakota,SD,West North Central,Midwest
+Tennessee,TN,East South Central,South
+Texas,TX,West South Central,South
+Utah,UT,Mountain,West
+Vermont,VT,New England,Northeast
+Virginia,VA,South Atlantic,South
+Washington,WA,Pacific,West
+West Virginia,WV,South Atlantic,South
+Wisconsin,WI,East North Central,Midwest
+Wyoming,WY,Mountain,West
