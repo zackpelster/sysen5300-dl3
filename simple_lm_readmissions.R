@@ -152,6 +152,19 @@ texreg::screenreg(
   custom.coef.map = list("StateTexas" = "Texas"), 
   include.fstat = TRUE)
 
+# ========================================================================
+#              Model 1         Model 2        Model 3        Model 4      
+# ------------------------------------------------------------------------
+# Texas        -115429.18 ***  -95558.72 ***  -64679.13 ***  -68241.25 ***
+#               (10187.17)     (13573.20)     (15980.65)     (16240.04)   
+# ------------------------------------------------------------------------
+# R^2                0.87           0.89           0.92           0.93    
+# Adj. R^2           0.86           0.88           0.91           0.91    
+# Num. obs.         22             22             22             22       
+# F statistic      128.39          76.46          72.19          54.96    
+# ========================================================================
+# *** p < 0.001; ** p < 0.01; * p < 0.05
+
 m4 = measures %>% lm(formula = Readmissions ~ State + Hospitalizations + ED_Visits +
                        PQI_90_Prevention_Quality_Overall_Composite_Benficiaries)
 
@@ -159,6 +172,11 @@ m4 %>%
   tidier() %>%
   arrange(desc(estimate)) %>%
   filter(term %in% c("(Intercept)", "StateTexas"))
+# A tibble: 2 × 8
+#   term        estimate    se statistic p_value stars   upper    lower
+#   <chr>          <dbl> <dbl>     <dbl>   <dbl> <chr>   <dbl>    <dbl>
+# 1 (Intercept)  392520.  6.80      6.80   0     ***   514262.  270778.
+# 2 StateTexas   -68241. -4.20     -4.20   0.001 ***   -33978. -102505.
 
 # Texas saw readmissions 68241 fewer than California, within a 95% confidence interval 
 # of -102505 to -33978 (p < 0.001).
@@ -170,6 +188,12 @@ m5 = measures %>% lm(formula = Readmissions ~ State + scale(Hospitalizations) + 
 m5 %>%
   tidier() %>%
   filter(str_starts(term, "scale"))
+# A tibble: 3 × 8
+#   term                                                   estimate     se statistic p_value stars  upper   lower
+#   <chr>                                                     <dbl>  <dbl>     <dbl>   <dbl> <chr>  <dbl>   <dbl>
+# 1 scale(Hospitalizations)                                   -114. -0.014    -0.014   0.989 " "   16578. -16806.
+# 2 scale(ED_Visits)                                         26149.  2.75      2.75    0.014 "*"   46190.   6108.
+# 3 scale(PQI_90_Prevention_Quality_Overall_Composite_Ben…    5700.  1.08      1.08    0.294 " "   16797.  -5398.
 
 # The largest effect is from the ED visits.
 # We see that for every 1 standard deviation increase in the ED visits in a state,
