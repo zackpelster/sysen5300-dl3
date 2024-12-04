@@ -6,6 +6,28 @@ library(moments)
 library(dplyr)
 library(tidyr)
 
+# How do we approximate sigma-short?
+dn = function(n = 12, reps = 1e4){
+  # For 10,0000 reps
+  tibble(rep = 1:reps) %>%
+    # For each rep,
+    group_by(rep) %>%
+    # Simulate the ranges of n values
+    summarize(r = rnorm(n = n, mean = 0, sd = 1) %>% range() %>% diff() %>% abs()) %>%
+    ungroup() %>%
+    # And calculate...
+    summarize(
+      # Mean range
+      d2 = mean(r),
+      # standard deviation of ranges
+      d3 = sd(r),
+      # and constants for obtaining lower and upper ci for rbar
+      D3 = 1 - 3*(d3/d2), # sometimes written D3
+      D4 = 1 + 3*(d3/d2), # sometimes written D4
+      # Sometimes D3 goes negative; we need to bound it at zero
+      D3 = if_else(D3 < 0, true = 0, false = D3) ) %>%
+    return()
+}
 
 #Let's write a function bn() to calculate our B3 and B4 statistics for any subgroup size n
 bn = function(n, reps = 1e4){
@@ -254,15 +276,15 @@ stat_t = stat_s %>%
 
 gs_1 = stat_s %>%
   ggplot(mapping = aes(x = State, y = xbar)) +
-  geom_hline(mapping = aes(yintercept = mean(xbar)), color = "lightgrey", size = 3) +
-  geom_ribbon(mapping = aes(ymin = lower, ymax = upper), fill = "steelblue", alpha = 0.2) +
+  geom_hline(mapping = aes(yintercept = mean(xbar)), color = "darkgrey", linewidth = 1) +
+  geom_ribbon(mapping = aes(ymin = mean(lower), ymax = mean(upper)), fill = "steelblue", alpha = 0.2) +
   # Upper and lower control limits as lines
-  geom_line(mapping = aes(x = State, y = upper, group = 1), color = "red", linetype = "dashed", size = 1) +
-  geom_line(mapping = aes(x = State, y = lower, group = 1), color = "red", linetype = "dashed", size = 1) +
-  geom_line(mapping = aes(x = State, y = upper_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
-  geom_line(mapping = aes(x = State, y = lower_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
-  geom_line(mapping = aes(x = State, y = upper_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
-  geom_line(mapping = aes(x = State, y = lower_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_hline(mapping = aes(yintercept = mean(upper)), color = "red", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(lower)), color = "red", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(upper_A_B)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(lower_A_B)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(upper_B_C)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(lower_B_C)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
   geom_line(size = 1) +
   geom_point(size = 5) +
   # Plot labels
@@ -273,15 +295,15 @@ gs_1
 
 gs_2 = stat_s %>%
   ggplot(mapping = aes(x = State, y = sd)) +
-  geom_hline(data = stat_t, mapping = aes(yintercept = sdbar), color = "lightgrey", size = 3) +
-  geom_ribbon(mapping = aes(ymin = s_lower, ymax = s_upper), fill = "steelblue", alpha = 0.2) +
+  geom_hline(data = stat_t, mapping = aes(yintercept = sdbar), color = "darkgrey", linewidth = 1) +
+  geom_ribbon(mapping = aes(ymin = mean(s_lower), ymax = mean(s_upper)), fill = "steelblue", alpha = 0.2) +
   # Upper and lower control limits as lines
-  geom_line(mapping = aes(x = State, y = s_upper, group = 1), color = "red", linetype = "dashed", size = 1) +
-  geom_line(mapping = aes(x = State, y = s_lower, group = 1), color = "red", linetype = "dashed", size = 1) +
-  geom_line(mapping = aes(x = State, y = s_upper_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
-  geom_line(mapping = aes(x = State, y = s_lower_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
-  geom_line(mapping = aes(x = State, y = s_upper_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
-  geom_line(mapping = aes(x = State, y = s_lower_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_hline(mapping = aes(yintercept = mean(s_upper)), color = "red", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(s_lower)), color = "red", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(s_upper_A_B)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(s_lower_A_B)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(s_upper_B_C)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(s_lower_B_C)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
   geom_line(size = 1) +
   geom_point(size = 5) +
   # Plot labels
@@ -293,15 +315,15 @@ gs_2
 
 gs_3 = stat_s %>%
   ggplot(mapping = aes(x = State, y = r)) +
-  geom_hline(data = stat_t, mapping = aes(yintercept = rbar), color = "lightgrey", size = 3) +
-  geom_ribbon(mapping = aes(ymin = r_lower, ymax = r_upper), fill = "steelblue", alpha = 0.2) +
+  geom_hline(data = stat_t, mapping = aes(yintercept = rbar), color = "darkgrey", linewidth = 1) +
+  geom_ribbon(mapping = aes(ymin = mean(r_lower), ymax = mean(r_upper)), fill = "steelblue", alpha = 0.2) +
   # Upper and lower control limits as lines
-  geom_line(mapping = aes(x = State, y = r_upper, group = 1), color = "red", linetype = "dashed", size = 1) +
-  geom_line(mapping = aes(x = State, y = r_lower, group = 1), color = "red", linetype = "dashed", size = 1) +
-  geom_line(mapping = aes(x = State, y = r_upper_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
-  geom_line(mapping = aes(x = State, y = r_lower_A_B, group = 1), color = "red", linetype = "dashed", size = 2/3) +
-  geom_line(mapping = aes(x = State, y = r_upper_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
-  geom_line(mapping = aes(x = State, y = r_lower_B_C, group = 1), color = "red", linetype = "dashed", size = 1/3) +
+  geom_hline(mapping = aes(yintercept = mean(r_upper)), color = "red", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(r_lower)), color = "red", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(r_upper_A_B)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(r_lower_A_B)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(r_upper_B_C)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
+  geom_hline(mapping = aes(yintercept = mean(r_lower_B_C)), color = "lightgrey", linetype = "dashed", linewidth = 1) +
   geom_line(size = 1) +
   geom_point(size = 5) +
   # Plot labels
